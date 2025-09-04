@@ -17,7 +17,8 @@
     .btn { cursor:pointer; border:1px solid #ccc; border-radius:8px; padding:4px 8px; background:#f7f7f7; }
     .toolbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:6px 0; }
     .groupTitle { margin:8px 0 4px; font-weight:600; font-size:13px; color:#333; }
-    .leaflet-interactive:focus { outline: none; } /* remove rectangle after click */
+    .leaflet-interactive:focus { outline: none; }
+    #map { user-select: none; } /* stop browser selection marquee */
   </style>
 </head>
 <body>

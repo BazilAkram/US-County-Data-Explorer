@@ -1,4 +1,10 @@
-const map = L.map("map", { minZoom: 3 }).setView([37.8, -96], 4);
+const map = L.map("map", {
+  minZoom: 3,
+  boxZoom: false,
+  doubleClickZoom: false,
+  scrollWheelZoom: true
+ }).setView([37.8, -96], 4);
+
 let basemap = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 12, attribution: "&copy; OpenStreetMap"
 });
@@ -84,13 +90,16 @@ map.on("keyup",   (e) => { if (e.originalEvent.key === "Shift") { isShift = fals
 
 map.on("mousedown", (e) => {
   if (!isShift) return;
+  L.DomEvent.stop(e);                // stop default/propagation
   lassoPoints = [e.latlng];
   lassoPolyline = L.polyline(lassoPoints, { color:"#000", weight:1, dashArray:"4 2" }).addTo(map);
   map.dragging.disable();
+  map.boxZoom.disable();
 });
 
 map.on("mousemove", (e) => {
   if (!lassoPolyline) return;
+  L.DomEvent.stop(e);
   lassoPoints.push(e.latlng);
   lassoPolyline.setLatLngs(lassoPoints);
 });
@@ -119,6 +128,7 @@ function endLasso() {
   lassoPolyline = null;
   lassoPoints = [];
   map.dragging.enable();
+  map.boxZoom.enable();
 }
 
 // Controls
