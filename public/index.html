@@ -4,32 +4,58 @@
   <meta charset="utf-8" />
   <title>US County Explorer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- Leaflet (CDN; no SRI to avoid block). If you prefer local, swap to ./vendor/leaflet/... -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     html, body, #map { height: 100%; margin: 0; }
-    .panel {
-      position: absolute; top: 12px; left: 12px; max-width: 360px;
-      background: #fff; border-radius: 10px; padding: 10px 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,.15); font-family: system-ui, sans-serif; font-size: 14px;
-      z-index: 1000;
-    }
+    .panel { position:absolute; top:12px; left:12px; max-width: 460px; background:#fff; border-radius:10px; padding:10px 12px;
+             box-shadow:0 6px 20px rgba(0,0,0,.15); font:14px system-ui, sans-serif; z-index:1200; }
+    .panel.collapsed { height:auto; max-height:none; padding:6px 8px; }
+    .panel.collapsed #panelBody { display:none; }
     .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#eee; margin:2px 4px 0 0; }
     .hint { color:#666; font-size:12px; margin-top:6px; }
-    .selected { stroke: #111; stroke-width: 1.5; fill: #3388ff; fill-opacity: .35; }
-    .leaflet-interactive:focus {outline: none;}
+    .btn { cursor:pointer; border:1px solid #ccc; border-radius:8px; padding:4px 8px; background:#f7f7f7; }
+    .toolbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:6px 0; }
+    .groupTitle { margin:8px 0 4px; font-weight:600; font-size:13px; color:#333; }
+    .leaflet-interactive:focus { outline: none; } /* remove rectangle after click */
   </style>
 </head>
 <body>
   <div id="map"></div>
+
   <div class="panel" id="panel">
-    <div><strong>Selected counties:</strong> <span id="selCount">0</span></div>
-    <div id="names" style="margin-top:4px;"></div>
-    <hr/>
-    <div id="stats"></div>
-    <div class="hint">Click to toggle. Shift+drag to pan. Double-click map to clear.</div>
+    <div class="toolbar">
+      <button class="btn" id="togglePanel">Minimize</button>
+      <button class="btn" id="clearBtn">Clear selection</button>
+      <select id="stateSelect"></select>
+      <button class="btn" id="fillStateBtn">Fill state</button>
+      <span style="margin-left:auto"><strong>Selected:</strong> <span id="selCount">0</span></span>
+    </div>
+
+    <div id="panelBody">
+      <div id="names" style="margin-bottom:6px;"></div>
+      <hr/>
+      <div class="groupTitle">Selected Area</div>
+      <div id="stats"></div>
+
+      <div class="groupTitle">Education & Internet</div>
+      <div id="eduNet"></div>
+
+      <div class="groupTitle">Race</div>
+      <div id="race"></div>
+
+      <div class="groupTitle">Age</div>
+      <div id="age"></div>
+
+      <div class="groupTitle">Income</div>
+      <div id="income"></div>
+
+      <div class="hint">Tip: Hold <b>Shift</b> and drag to lasso-select multiple counties.</div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
