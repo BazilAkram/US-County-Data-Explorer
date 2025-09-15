@@ -1,53 +1,19 @@
+// node >=18
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");                 // repo root
-const OUT_DIR = path.resolve(ROOT, "public", "data");       // write where the site can serve it
+const ROOT = path.resolve(__dirname, "..");
+const OUT_DIR = path.resolve(ROOT, "public", "data");
 
 const YEAR = 2023; // bump when new ACS 5-yr drops
 const API = "https://api.census.gov/data";
 const KEY = process.env.CENSUS_API_KEY ? `&key=${process.env.CENSUS_API_KEY}` : "";
 
-// ---------- Variables to fetch ----------
-const VARS = {
-  // Population (count)
-  pop_total: { ds: "acs/acs5", codes: ["B01003_001E"] },
-
-  // Households + Broadband (% of households with broadband)
-  net: { ds: "acs/acs5/subject", codes: ["S2801_C01_001E", "S2801_C02_014E"] },
-
-  // Education % (25+) + base population 25+
-  edu: { ds: "acs/acs5/subject", codes: ["S1501_C02_014E", "S1501_C02_015E", "S1501_C01_006E"] },
-
-  // Race counts (B02001)
-  race: { ds: "acs/acs5", codes: [
-    "B02001_001E", // total
-    "B02001_002E", // White alone
-    "B02001_003E", // Black or African American alone
-    "B02001_004E", // American Indian and Alaska Native alone
-    "B02001_005E", // Asian alone
-    "B02001_006E", // Native Hawaiian and Other Pacific Islander alone
-    "B02001_007E", // Some other race alone
-    "B02001_008E"  // Two or more races
-  ]},
-
-  // Age buckets (counts) via S0101 (subject table)
-  age: { ds: "acs/acs5/subject", codes: [
-    "S0101_C01_001E", // total pop
-    "S0101_C01_002E","S0101_C01_003E","S0101_C01_004E","S0101_C01_005E", // <18 components
-    "S0101_C01_006E","S0101_C01_007E","S0101_C01_008E","S0101_C01_009E","S0101_C01_010E","S0101_C01_011E","S0101_C01_012E","S0101_C01_013E","S0101_C01_014E", // 18–64 components
-    "S0101_C01_015E","S0101_C01_016E","S0101_C01_017E","S0101_C01_018E"  // 65+ components
-  ]},
-
-  // Median household income (USD)
-  income: { ds: "acs/acs5", codes: ["B19013_001E"] }
-};
-
-const GEO = "for=county:*&in=state:*"; // all counties
-
+// ------------ helpers ------------
 async function fetchACS(ds, codes) {
+  const GEO = "for=county:*&in=state:*";
   const get = ["NAME", ...codes].join(",");
   const url = `${API}/${YEAR}/${ds}?get=${get}&${GEO}${KEY}`;
   const res = await fetch(url);
@@ -76,33 +42,75 @@ function mergeMaps(...maps) {
   }
   return out;
 }
-
 const toNum = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : null;
 };
 
+// ------------ variables ------------
+const VARS = {
+  // core
+  pop_total: { ds: "acs/acs5", codes: ["B01003_001E"] },
+  net:       { ds: "acs/acs5/subject", codes: ["S2801_C01_001E", "S2801_C02_014E"] }, // HH total, % broadband
+  edu:       { ds: "acs/acs5/subject", codes: ["S1501_C02_014E","S1501_C02_015E","S1501_C01_006E"] }, // HS+/BA+ %, 25+ base
+
+  // race + hispanic
+  race:      { ds: "acs/acs5", codes: [
+                "B02001_001E","B02001_002E","B02001_003E","B02001_004E",
+                "B02001_005E","B02001_006E","B02001_007E","B02001_008E"
+              ]},
+  hisp:      { ds: "acs/acs5", codes: ["B03003_001E","B03003_003E"] }, // base, hispanic
+
+  // age (fine buckets via S0101)
+  age:       { ds: "acs/acs5/subject", codes: [
+                "S0101_C01_002E","S0101_C01_003E","S0101_C01_004E","S0101_C01_005E", // 0-4,5-9,10-14,15-19
+                "S0101_C01_006E","S0101_C01_007E","S0101_C01_008E","S0101_C01_009E","S0101_C01_010E",
+                "S0101_C01_011E","S0101_C01_012E","S0101_C01_013E","S0101_C01_014E",
+                "S0101_C01_015E","S0101_C01_016E","S0101_C01_017E","S0101_C01_018E"
+              ]},
+
+  // income distribution (for mean, P20, P80)
+  income_dist: { ds: "acs/acs5", codes: [
+    "B19001_001E","B19001_002E","B19001_003E","B19001_004E","B19001_005E",
+    "B19001_006E","B19001_007E","B19001_008E","B19001_009E","B19001_010E",
+    "B19001_011E","B19001_012E","B19001_013E","B19001_014E","B19001_015E",
+    "B19001_016E","B19001_017E"
+  ]},
+
+  // economy + housing (kept), social (pruned to robust)
+  employment: { ds: "acs/acs5", codes: [
+    "B23025_001E","B23025_002E","B23025_003E","B23025_004E","B23025_005E","B23025_006E","B23025_007E"
+  ]},
+  poverty:   { ds: "acs/acs5/subject", codes: ["S1701_C02_001E","S1701_C01_001E"] },
+  tenure:    { ds: "acs/acs5", codes: ["B25003_001E","B25003_002E","B25003_003E"] },
+  rent:      { ds: "acs/acs5", codes: ["B25064_001E"] },
+  yearbuilt: { ds: "acs/acs5", codes: [
+    "B25034_001E","B25034_002E","B25034_003E","B25034_004E","B25034_005E","B25034_006E",
+    "B25034_007E","B25034_008E","B25034_009E","B25034_010E"
+  ]},
+
+  // social (robust only)
+  foreign:   { ds: "acs/acs5/subject", codes: ["S0501_C02_001E"] },     // % foreign-born
+  lang_other:{ ds: "acs/acs5/subject", codes: ["S1601_C02_001E"] }      // % speak other-than-English at home
+};
+
 async function main() {
-  console.log(`[build] ROOT=${ROOT}`);
-  // 0) ensure input geometry exists
   const gjPath = path.join(__dirname, "counties_simplified.geojson");
-  console.log(`[build] Input GeoJSON: ${gjPath}`);
   await fs.access(gjPath).catch(() => { throw new Error(`Input not found: ${gjPath}`); });
 
-  // 1) fetch ACS blocks
-  console.log("[build] Fetching ACS…");
-  const mPop = await fetchACS(VARS.pop_total.ds, VARS.pop_total.codes);
-  const mEdu = await fetchACS(VARS.edu.ds, VARS.edu.codes);
-  const mNet = await fetchACS(VARS.net.ds, VARS.net.codes);
-  const mRace= await fetchACS(VARS.race.ds, VARS.race.codes);
-  const mAge = await fetchACS(VARS.age.ds, VARS.age.codes);
-  const mInc = await fetchACS(VARS.income.ds, VARS.income.codes);
-  const joined = mergeMaps(mPop, mEdu, mNet, mRace, mAge, mInc);
-
-  // 2) load geometries
+  const pulls = {};
+  for (const [k, spec] of Object.entries(VARS)) {
+    try {
+      pulls[k] = await fetchACS(spec.ds, spec.codes);
+      console.log(`[build] fetched ${k}`);
+    } catch (e) {
+      pulls[k] = new Map();
+      console.warn(`[build] WARN: ${k} fetch failed: ${e.message}`);
+    }
+  }
+  const joined = mergeMaps(...Object.values(pulls));
   const geo = JSON.parse(await fs.readFile(gjPath, "utf8"));
 
-  // 3) compute stats & pin to features
   const M2_PER_KM2 = 1_000_000;
   const M2_PER_MI2 = 2_589_988.110336;
   const stats = {};
@@ -113,24 +121,20 @@ async function main() {
     const rec = joined.get(geoid);
     if (!rec) continue;
 
-    const ALAND = toNum(p.ALAND); // m^2
+    const ALAND = toNum(p.ALAND);
     const area_km2 = ALAND != null ? ALAND / M2_PER_KM2 : null;
 
-    // base counts
+    // core
     const pop  = toNum(rec.B01003_001E);
     const hh   = toNum(rec.S2801_C01_001E);
     const pop25= toNum(rec.S1501_C01_006E);
-
-    // rates (percentages)
     const hs_pct = toNum(rec.S1501_C02_014E);
     const ba_pct = toNum(rec.S1501_C02_015E);
     const bb_pct = toNum(rec.S2801_C02_014E);
-
-    // densities
     const dens_km2 = (pop != null && area_km2) ? pop / area_km2 : null;
     const dens_mi2 = (pop != null && ALAND != null) ? pop / (ALAND / M2_PER_MI2) : null;
 
-    // race (counts)
+    // race + hispanic
     const rTot = toNum(rec.B02001_001E);
     const rW   = toNum(rec.B02001_002E);
     const rB   = toNum(rec.B02001_003E);
@@ -139,49 +143,106 @@ async function main() {
     const rP   = toNum(rec.B02001_006E);
     const rO   = toNum(rec.B02001_007E);
     const rT   = toNum(rec.B02001_008E);
+    const hisp_base = toNum(rec.B03003_001E);
+    const hisp      = toNum(rec.B03003_003E);
 
-    // age buckets (counts)
-    const under18 = (toNum(rec.S0101_C01_002E)||0)+(toNum(rec.S0101_C01_003E)||0)+(toNum(rec.S0101_C01_004E)||0)+(toNum(rec.S0101_C01_005E)||0);
-    const age18_64= (toNum(rec.S0101_C01_006E)||0)+(toNum(rec.S0101_C01_007E)||0)+(toNum(rec.S0101_C01_008E)||0)+(toNum(rec.S0101_C01_009E)||0)+(toNum(rec.S0101_C01_010E)||0)+(toNum(rec.S0101_C01_011E)||0)+(toNum(rec.S0101_C01_012E)||0)+(toNum(rec.S0101_C01_013E)||0)+(toNum(rec.S0101_C01_014E)||0);
-    const age65p  = (toNum(rec.S0101_C01_015E)||0)+(toNum(rec.S0101_C01_016E)||0)+(toNum(rec.S0101_C01_017E)||0)+(toNum(rec.S0101_C01_018E)||0);
+    // age fine cohorts (we’ll compose later)
+    const age = {
+      a0_4:  toNum(rec.S0101_C01_002E),
+      a5_9:  toNum(rec.S0101_C01_003E),
+      a10_14:toNum(rec.S0101_C01_004E),
+      a15_19:toNum(rec.S0101_C01_005E),
+      a20_24:toNum(rec.S0101_C01_006E),
+      a25_29:toNum(rec.S0101_C01_007E),
+      a30_34:toNum(rec.S0101_C01_008E),
+      a35_39:toNum(rec.S0101_C01_009E),
+      a40_44:toNum(rec.S0101_C01_010E),
+      a45_49:toNum(rec.S0101_C01_011E),
+      a50_54:toNum(rec.S0101_C01_012E),
+      a55_59:toNum(rec.S0101_C01_013E),
+      a60_64:toNum(rec.S0101_C01_014E),
+      a65_69:toNum(rec.S0101_C01_015E),
+      a70_74:toNum(rec.S0101_C01_016E),
+      a75_79:toNum(rec.S0101_C01_017E),
+      a80p:  toNum(rec.S0101_C01_018E)
+    };
 
-    // income (median household)
-    const medHH = toNum(rec.B19013_001E);
+    // income distribution (B19001 bins 1..17)
+    const id = (k) => toNum(rec[k]) || 0;
+    const inc_bins = [
+      id("B19001_002E"), // <10k
+      id("B19001_003E"), // 10-14,999
+      id("B19001_004E"), // 15-19,999
+      id("B19001_005E"), // 20-24,999
+      id("B19001_006E"), // 25-29,999
+      id("B19001_007E"), // 30-34,999
+      id("B19001_008E"), // 35-39,999
+      id("B19001_009E"), // 40-44,999
+      id("B19001_010E"), // 45-49,999
+      id("B19001_011E"), // 50-59,999
+      id("B19001_012E"), // 60-74,999
+      id("B19001_013E"), // 75-99,999
+      id("B19001_014E"), // 100-124,999
+      id("B19001_015E"), // 125-149,999
+      id("B19001_016E"), // 150-199,999
+      id("B19001_017E")  // 200k+
+    ];
+    const inc_total = toNum(rec["B19001_001E"]);
 
-    const s = stats[geoid] = {
-      geoid,
-      name: p.NAME,
-      statefp: p.STATEFP,
-      countyfp: p.COUNTYFP,
+    // economy / housing / social (robust)
+    const emp_total16 = toNum(rec.B23025_001E);
+    const emp_inLF    = toNum(rec.B23025_002E);
+    const emp_civLF   = toNum(rec.B23025_003E);
+    const emp_employed= toNum(rec.B23025_004E);
+    const emp_unemployed=toNum(rec.B23025_005E);
+    const emp_armed   = toNum(rec.B23025_006E);
+    const emp_notLF   = toNum(rec.B23025_007E);
+
+    const pov_pct = toNum(rec.S1701_C02_001E);
+    const pov_base= toNum(rec.S1701_C01_001E);
+
+    const occ_units = toNum(rec.B25003_001E);
+    const owner_occ = toNum(rec.B25003_002E);
+    const renter_occ= toNum(rec.B25003_003E);
+    const med_rent  = toNum(rec.B25064_001E);
+
+    const yb_total = id("B25034_001E");
+    const yb_pre80 = id("B25034_002E")+id("B25034_003E")+id("B25034_004E")+id("B25034_005E")+id("B25034_006E");
+    const yb_80_99 = id("B25034_007E")+id("B25034_008E");
+    const yb_00_09 = id("B25034_009E");
+    const yb_10p   = id("B25034_010E");
+
+    const foreign_pct = toNum(rec.S0501_C02_001E);
+    const lang_other_pct = toNum(rec.S1601_C02_001E);
+
+    stats[geoid] = {
+      geoid, name: p.NAME, statefp: p.STATEFP, countyfp: p.COUNTYFP,
       // core
       pop, households: hh, pop25,
-      edu_hs_or_higher_pct: hs_pct,
-      edu_ba_or_higher_pct: ba_pct,
-      broadband_any_pct: bb_pct,
-      area_km2, density_km2: dens_km2, density_mi2: dens_mi2,
-      year: YEAR,
-      // extras
+      edu_hs_or_higher_pct: hs_pct, edu_ba_or_higher_pct: ba_pct, broadband_any_pct: bb_pct,
+      area_km2, density_km2: dens_km2, density_mi2: dens_mi2, year: YEAR,
+      // race + hispanic
       race_total: rTot, race_white: rW, race_black: rB, race_native: rN, race_asian: rA, race_pacific: rP, race_other: rO, race_two: rT,
-      age_under18: under18, age_18to64: age18_64, age_65plus: age65p,
-      median_hh_income: medHH
+      hisp_total: hisp, hisp_base,
+      // age detail
+      age_detail: age,
+      // income dist
+      inc_bins, inc_total,
+      // economy/housing
+      emp_total16, emp_inLF, emp_civLF, emp_employed, emp_unemployed, emp_armed, emp_notLF,
+      pov_pct, pov_base,
+      occ_units, owner_occ, renter_occ, med_rent,
+      yb_total, yb_pre80, yb_80_99, yb_00_09, yb_10p,
+      // social (robust)
+      foreign_pct, lang_other_pct
     };
-    f.properties.__stats = s; // handy if you want per-county tooltips later
+    f.properties.__stats = { geoid, name: p.NAME }; // light touch
   }
 
-  // 4) write outputs to /public/data
   await fs.mkdir(OUT_DIR, { recursive: true });
-  const outGeo  = path.join(OUT_DIR, "counties_enriched.geojson");
-  const outJson = path.join(OUT_DIR, "counties_stats.json");
-  await fs.writeFile(outGeo, JSON.stringify(geo));
-  await fs.writeFile(outJson, JSON.stringify(stats));
-
-  // 5) verify
-  const [stGeo, stJson] = await Promise.all([fs.stat(outGeo), fs.stat(outJson)]);
-  console.log(`[build] Wrote ${outGeo} (${stGeo.size.toLocaleString()} bytes)`);
-  console.log(`[build] Wrote ${outJson} (${stJson.size.toLocaleString()} bytes)`);
+  await fs.writeFile(path.join(OUT_DIR, "counties_enriched.geojson"), JSON.stringify(geo));
+  await fs.writeFile(path.join(OUT_DIR, "counties_stats.json"), JSON.stringify(stats));
+  console.log("[build] wrote public/data/{counties_enriched.geojson,counties_stats.json}");
 }
 
-main().catch(e => {
-  console.error("[build] ERROR:", e.message);
-  process.exit(1);
-});
+main().catch(e => { console.error("[build] ERROR:", e.message); process.exit(1); });

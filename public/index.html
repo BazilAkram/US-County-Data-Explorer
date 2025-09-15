@@ -4,25 +4,33 @@
   <meta charset="utf-8" />
   <title>US County Explorer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Leaflet (CDN; no SRI to avoid block). If you prefer local, swap to ./vendor/leaflet/... -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     html, body, #map { height: 100%; margin: 0; }
-    .panel { position:absolute; top:12px; left:12px; max-width: 460px; background:#fff; border-radius:10px; padding:10px 12px;
-             box-shadow:0 6px 20px rgba(0,0,0,.15); font:14px system-ui, sans-serif; z-index:1200; }
+    #map { user-select: none; }
+    .panel {
+      position: absolute; top: 12px; left: 12px; width: 560px; max-width: calc(100vw - 24px);
+      max-height: calc(100vh - 24px); overflow: auto; background: #fff; border-radius: 10px;
+      padding: 10px 12px; box-shadow: 0 6px 20px rgba(0,0,0,.15); font: 14px system-ui, sans-serif; z-index: 1200;
+    }
     .panel.collapsed { height:auto; max-height:none; padding:6px 8px; }
     .panel.collapsed #panelBody { display:none; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#eee; margin:2px 4px 0 0; }
-    .hint { color:#666; font-size:12px; margin-top:6px; }
+    .toolbar { position: sticky; top: 0; background: #fff; padding-bottom: 6px; z-index: 10; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
     .btn { cursor:pointer; border:1px solid #ccc; border-radius:8px; padding:4px 8px; background:#f7f7f7; }
-    .toolbar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin:6px 0; }
-    .groupTitle { margin:8px 0 4px; font-weight:600; font-size:13px; color:#333; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#eee; margin:2px 4px 0 0; }
+    .section { margin: 10px 0; }
+    .groupTitle { margin:8px 0 4px; font-weight:600; font-size:13px; color:#333; border-bottom: 1px solid #eee; padding-bottom: 2px; }
+    .kv { display:grid; grid-template-columns: 1fr auto; gap:4px 8px; }
+    .kv div b { color:#222; }
     .leaflet-interactive:focus { outline: none; }
-    #map { user-select: none; } /* stop browser selection marquee */
+    .map-btn { position:absolute; top:12px; right:12px; z-index:1200; }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
+  <!-- Basemap toggle -->
+  <button class="btn map-btn" id="toggleBasemap">OSM On</button>
 
   <div class="panel" id="panel">
     <div class="toolbar">
@@ -34,24 +42,51 @@
     </div>
 
     <div id="panelBody">
-      <div id="names" style="margin-bottom:6px;"></div>
-      <hr/>
-      <div class="groupTitle">Selected Area</div>
-      <div id="stats"></div>
+      <div id="names" class="section"></div>
 
-      <div class="groupTitle">Education & Internet</div>
-      <div id="eduNet"></div>
+      <div class="section">
+        <div class="groupTitle">Selected Area (Core)</div>
+        <div id="core" class="kv"></div>
+      </div>
 
-      <div class="groupTitle">Race</div>
-      <div id="race"></div>
+      <div class="section">
+        <div class="groupTitle">Education & Internet</div>
+        <div id="eduNet" class="kv"></div>
+      </div>
 
-      <div class="groupTitle">Age</div>
-      <div id="age"></div>
+      <div class="section">
+        <div class="groupTitle">Race & Ethnicity</div>
+        <div id="race" class="kv"></div>
+      </div>
 
-      <div class="groupTitle">Income</div>
-      <div id="income"></div>
+      <div class="section">
+        <div class="groupTitle">Age (detailed)</div>
+        <div id="age" class="kv"></div>
+      </div>
 
-      <div class="hint">Tip: Hold <b>Shift</b> and drag to lasso-select multiple counties.</div>
+      <div class="section">
+        <div class="groupTitle">Income</div>
+        <div id="income" class="kv"></div>
+      </div>
+
+      <div class="section">
+        <div class="groupTitle">Economy</div>
+        <div id="economy" class="kv"></div>
+      </div>
+
+      <div class="section">
+        <div class="groupTitle">Housing</div>
+        <div id="housing" class="kv"></div>
+      </div>
+
+      <div class="section">
+        <div class="groupTitle">Social</div>
+        <div id="social" class="kv"></div>
+      </div>
+
+      <div class="section" style="color:#666; font-size:12px;">
+        Notes: Hispanic/Latino is an ethnicity (overlaps with race). “Mean income” and P20/P80 are approximations from binned distributions.
+      </div>
     </div>
   </div>
 
