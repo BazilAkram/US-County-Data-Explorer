@@ -267,8 +267,8 @@ function renderPanel() {
 
   const r = sum.race, rt = r.total || sum.pop || 0;
   raceDiv.innerHTML = `
-    White: ${pct(r.white, rt)} · Black: ${pct(r.black, rt)} · Native: ${pct(r.native, rt)}<br/>
-    Asian: ${pct(r.asian, rt)} · Pacific: ${pct(r.pacific, rt)} · Other: ${pct(r.other, rt)} · Two+: ${pct(r.two, rt)}
+    <b>White:</b> ${pct(r.white, rt)} · <b>Black:</b> ${pct(r.black, rt)} · <b>Native:</b> ${pct(r.native, rt)}<br/>
+    <b>Asian:</b> ${pct(r.asian, rt)} · <b>Pacific:</b> ${pct(r.pacific, rt)} · <b>Other:</b> ${pct(r.other, rt)} · <b>Two+:</b> ${pct(r.two, rt)}
   `;
 
   const a = sum.age, at = a.total || sum.pop || 0;
