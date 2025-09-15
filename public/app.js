@@ -383,10 +383,6 @@ function renderPanel() {
     ["Owner-occupied", fmt(s.housing.owner) + (s.housing.owner_pct!=null? ` (${s.housing.owner_pct.toFixed(1)}%)`:"")],
     ["Renter-occupied", fmt(s.housing.renter) + (s.housing.renter_pct!=null? ` (${s.housing.renter_pct.toFixed(1)}%)`:"")],
     ["Median gross rent (weighted)", money(s.housing.median_rent)],
-    ["Year built ≤1979", s.housing.yearbuilt.pre1980_pct==null?"—":`${s.housing.yearbuilt.pre1980_pct.toFixed(1)}%`],
-    ["1980–1999", s.housing.yearbuilt.y1980_1999_pct==null?"—":`${s.housing.yearbuilt.y1980_1999_pct.toFixed(1)}%`],
-    ["2000–2009", s.housing.yearbuilt.y2000_2009_pct==null?"—":`${s.housing.yearbuilt.y2000_2009_pct.toFixed(1)}%`],
-    ["2010+", s.housing.yearbuilt.y2010plus_pct==null?"—":`${s.housing.yearbuilt.y2010plus_pct.toFixed(1)}%`]
   ]);
 
   renderKV(socialDiv, [
