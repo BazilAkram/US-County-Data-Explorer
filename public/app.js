@@ -178,6 +178,7 @@ function summarize(geoids) {
   // income distribution bins sum
   const BINS = new Array(16).fill(0);
   let inc_total = 0;
+  let inc_med_wsum = 0, inc_med_w = 0; // for HH-weighted median of county medians
 
   // economy / housing
   let e_total16=0,e_inLF=0,e_civLF=0,e_emp=0,e_unemp=0;
@@ -226,6 +227,11 @@ function summarize(geoids) {
       for (let i=0;i<16;i++) BINS[i] += s.inc_bins[i] || 0;
       inc_total += s.inc_total || 0;
     }
+    // median income
+    if (s.median_hh_income && s.households) {
+      inc_med_wsum += s.median_hh_income * s.households;
+      inc_med_w += s.households;
+    }
 
     // economy / housing
     e_total16 += s.emp_total16 || 0; e_inLF += s.emp_inLF || 0; e_civLF += s.emp_civLF || 0; e_emp += s.emp_employed || 0; e_unemp += s.emp_unemployed || 0;
@@ -251,6 +257,8 @@ function summarize(geoids) {
     [30000,35000],[35000,40000],[40000,45000],[45000,50000],[50000,60000],
     [60000,75000],[75000,100000],[100000,125000],[125000,150000],[150000,200000],[200000,250000] // top open bin capped at 250k
   ];
+  const median_income = inc_med_w ? (inc_med_wsum / inc_med_w) : null;
+
   const binMids = binEdges.map(([a,b]) => (a+b)/2);
   let mean_income = null, p20=null, p80=null;
   if (inc_total > 0) {
@@ -297,7 +305,7 @@ function summarize(geoids) {
     race: { total:rTot, white:rW, black:rB, native:rN, asian:rA, pacific:rP, other:rO, two:rT,
             hisp_pct: (hisp_base? (hisp/hisp_base*100): null) },
     age:  ageAgg,
-    income: { mean: mean_income, p20, p80 },
+    income: { median: median_income, mean: mean_income, p20, p80 },
     economy: { lf_participation, unemp_rate, inLF: e_inLF, employed: e_emp, unemployed: e_unemp },
     housing: {
       occupied: occ, owner: own, renter: rent,
@@ -366,8 +374,9 @@ function renderPanel() {
 
   renderKV(incomeDiv, [
     ["Mean household income", money(s.income.mean)],
-    ["P20 (bottom quintile cutoff)", money(s.income.p20)],
-    ["P80 (top quintile cutoff)", money(s.income.p80)]
+    ["Median household income", money(s.income.median)],
+    ["P20 (bottom quintile", money(s.income.p20)],
+    ["P80 (top quintile)", money(s.income.p80)]
   ]);
 
   renderKV(economyDiv, [

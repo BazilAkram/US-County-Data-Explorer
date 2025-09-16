@@ -69,13 +69,14 @@ const VARS = {
                 "S0101_C01_015E","S0101_C01_016E","S0101_C01_017E","S0101_C01_018E"
               ]},
 
-  // income distribution (for mean, P20, P80)
+  // income distribution (for mean, P20, P80) and median income
   income_dist: { ds: "acs/acs5", codes: [
     "B19001_001E","B19001_002E","B19001_003E","B19001_004E","B19001_005E",
     "B19001_006E","B19001_007E","B19001_008E","B19001_009E","B19001_010E",
     "B19001_011E","B19001_012E","B19001_013E","B19001_014E","B19001_015E",
     "B19001_016E","B19001_017E"
   ]},
+  income_median: { ds: "acs/acs5", codes: ["B19013_001E"] },
 
   // economy + housing (kept), social (pruned to robust)
   employment: { ds: "acs/acs5", codes: [
@@ -188,6 +189,8 @@ async function main() {
       id("B19001_017E")  // 200k+
     ];
     const inc_total = toNum(rec["B19001_001E"]);
+    // median household income
+    const medHH = toNum(rec.B19013_001E);
 
     // economy / housing / social (robust)
     const emp_total16 = toNum(rec.B23025_001E);
@@ -226,8 +229,8 @@ async function main() {
       hisp_total: hisp, hisp_base,
       // age detail
       age_detail: age,
-      // income dist
-      inc_bins, inc_total,
+      // income dist and median
+      inc_bins, inc_total, median_hh_income: medHH,
       // economy/housing
       emp_total16, emp_inLF, emp_civLF, emp_employed, emp_unemployed, emp_armed, emp_notLF,
       pov_pct, pov_base,
