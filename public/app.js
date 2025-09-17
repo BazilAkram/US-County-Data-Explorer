@@ -375,7 +375,7 @@ function renderPanel() {
   renderKV(incomeDiv, [
     ["Mean household income", money(s.income.mean)],
     ["Median household income", money(s.income.median)],
-    ["P20 (bottom quintile", money(s.income.p20)],
+    ["P20 (bottom quintile)", money(s.income.p20)],
     ["P80 (top quintile)", money(s.income.p80)]
   ]);
 
