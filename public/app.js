@@ -339,7 +339,7 @@ function renderPanel() {
   renderKV(coreDiv, [
     ["Total population", fmt(s.pop)],
     ["Total area", s.area_mi2==null ? "—" : `${fmt1(s.area_mi2)} mi² (${fmt1(s.area_mi2*2.58999)} km²)`],
-    ["Density", (s.area_mi2 && s.pop)? `${fmt1(s.pop/s.area_mi2)} /mi²` : "—"],
+    ["Density", (s.area_mi2 && s.pop) ? `${fmt1(s.pop/s.area_mi2)} /mi²  (${fmt1(s.pop/(s.area_mi2*2.58999))} /km²)` : "—"],
     ["Households", fmt(s.hh)]
   ]);
 
