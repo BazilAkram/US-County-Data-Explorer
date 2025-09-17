@@ -87,7 +87,6 @@ map.on("mousedown", (e) => {
   lassoPoints = [e.latlng];
   lassoPolyline = L.polyline(lassoPoints, { color:"#000", weight:1, dashArray:"4 2" }).addTo(map);
   map.dragging.disable();
-  map.boxZoom.disable();
 });
 map.on("mousemove", (e) => {
   if (!lassoPolyline) return; L.DomEvent.stop(e);
@@ -115,7 +114,6 @@ function endLasso() {
   lassoPolyline = null;
   lassoPoints = [];
   map.dragging.enable();
-  map.boxZoom.enable();
 }
 
 // Controls
