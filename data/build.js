@@ -44,7 +44,7 @@ function mergeMaps(...maps) {
 }
 const toNum = (v) => {
   const x = Number(v);
-  return Number.isFinite(x) ? x : null;
+  return (Number.isFinite(x) && (x >= 0)) ? x : null;
 };
 
 // ------------ variables ------------
