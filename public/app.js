@@ -185,7 +185,7 @@ function summarize(geoids) {
   let yb_tot=0, yb_pre80=0, yb_80_99=0, yb_00_09=0, yb_10p=0;
 
   // social (robust)
-  let foreign_num=0, foreign_den=0;
+  let foreign_cnt=0, foreign_den=0;
   let lang_other_num=0, lang_other_den=0;
 
   for (const g of geoids) {
@@ -238,7 +238,8 @@ function summarize(geoids) {
     yb_tot += s.yb_total || 0; yb_pre80 += s.yb_pre80 || 0; yb_80_99 += s.yb_80_99 || 0; yb_00_09 += s.yb_00_09 || 0; yb_10p += s.yb_10p || 0;
 
     // social (robust) — weight by population; clamp later
-    if (s.foreign_pct && s.pop) { foreign_num += (s.foreign_pct/100)*s.pop; foreign_den += s.pop; }
+    if (s.foreign_total!=null) foreign_cnt += s.foreign_total;
+    if (s.foreign_base!=null)  foreign_den += s.foreign_base;
     if (s.lang_other_pct && s.pop){ lang_other_num += (s.lang_other_pct/100)*s.pop; lang_other_den += s.pop; }
   }
 
@@ -294,7 +295,7 @@ function summarize(geoids) {
   const med_rent = rent_median_w ? (rent_median_wsum/rent_median_w) : null;
 
   // social (clamped)
-  const foreign = clampPct(foreign_den ? (foreign_num/foreign_den*100) : null);
+  const foreign = clampPct(foreign_den ? (foreign_cnt/foreign_den*100) : null);
   const lang_other = clampPct(lang_other_den ? (lang_other_num/lang_other_den*100) : null);
 
   return {

@@ -91,7 +91,7 @@ const VARS = {
   ]},
 
   // social (robust only)
-  foreign:   { ds: "acs/acs5/subject", codes: ["S0501_C02_001E"] },     // % foreign-born
+  foreign:   { ds: "acs/acs5", codes: ["B05002_001E","B05002_013E"] },     // % foreign-born
   lang_other:{ ds: "acs/acs5/subject", codes: ["S1601_C02_001E"] }      // % speak other-than-English at home
 };
 
@@ -215,7 +215,8 @@ async function main() {
     const yb_00_09 = id("B25034_009E");
     const yb_10p   = id("B25034_010E");
 
-    const foreign_pct = toNum(rec.S0501_C02_001E);
+    const foreign_total = toNum(rec.B05002_013E);
+    const foreign_base  = toNum(rec.B05002_001E);
     const lang_other_pct = toNum(rec.S1601_C02_001E);
 
     stats[geoid] = {
@@ -237,7 +238,7 @@ async function main() {
       occ_units, owner_occ, renter_occ, med_rent,
       yb_total, yb_pre80, yb_80_99, yb_00_09, yb_10p,
       // social (robust)
-      foreign_pct, lang_other_pct
+      foreign_total, foreign_base, lang_other_pct
     };
     f.properties.__stats = { geoid, name: p.NAME }; // light touch
   }
