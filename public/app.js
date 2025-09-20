@@ -48,6 +48,7 @@ const STATE_NAMES = {
 };
 
 // Load data
+const V = Date.now(); // dev-only
 const geo  = await fetch("./data/counties_enriched.geojson").then(r => r.json());
 const stats= await fetch("./data/counties_stats.json").then(r => r.json());
 
@@ -298,12 +299,14 @@ function summarize(geoids) {
 
   // social (clamped)
   const foreign = clampPct(foreign_den ? (foreign_cnt/foreign_den*100) : null);
-  const lang_other_pct = (lang_base5_sum > 0)
+  const lang_other_pct = (lang_base5_sum != null && lang_base5_sum > 0 && eng_only_sum != null)
     ? Math.max(0, Math.min(100, ((lang_base5_sum - eng_only_sum) / lang_base5_sum) * 100))
     : null;
-  const spanish_pct = (lang_base5_sum > 0)
+
+  const spanish_pct = (lang_base5_sum != null && lang_base5_sum > 0 && spanish_sum != null)
     ? Math.max(0, Math.min(100, (spanish_sum / lang_base5_sum) * 100))
     : null;
+
 
   return {
     pop, hh, pop25, area_mi2,
