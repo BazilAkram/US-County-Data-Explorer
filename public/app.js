@@ -186,7 +186,7 @@ function summarize(geoids) {
 
   // social (robust)
   let foreign_cnt=0, foreign_den=0;
-  let lang_other_num=0, lang_other_den=0;
+  let lang_base5_sum = 0, eng_only_sum = 0, spanish_sum = 0;
 
   for (const g of geoids) {
     const s = stats[g]; if (!s) continue;
@@ -240,7 +240,9 @@ function summarize(geoids) {
     // social (robust) — weight by population; clamp later
     if (s.foreign_total!=null) foreign_cnt += s.foreign_total;
     if (s.foreign_base!=null)  foreign_den += s.foreign_base;
-    if (s.lang_other_pct && s.pop){ lang_other_num += (s.lang_other_pct/100)*s.pop; lang_other_den += s.pop; }
+    if (s.lang_base5 != null)  lang_base5_sum += s.lang_base5;
+    if (s.eng_only != null)    eng_only_sum   += s.eng_only;
+    if (s.spanish != null)     spanish_sum    += s.spanish;
   }
 
   // derived
@@ -296,7 +298,12 @@ function summarize(geoids) {
 
   // social (clamped)
   const foreign = clampPct(foreign_den ? (foreign_cnt/foreign_den*100) : null);
-  const lang_other = clampPct(lang_other_den ? (lang_other_num/lang_other_den*100) : null);
+  const lang_other_pct = (lang_base5_sum > 0)
+    ? Math.max(0, Math.min(100, ((lang_base5_sum - eng_only_sum) / lang_base5_sum) * 100))
+    : null;
+  const spanish_pct = (lang_base5_sum > 0)
+    ? Math.max(0, Math.min(100, (spanish_sum / lang_base5_sum) * 100))
+    : null;
 
   return {
     pop, hh, pop25, area_mi2,
@@ -316,7 +323,7 @@ function summarize(geoids) {
         y2010plus_pct: yb_tot? (yb_10p/yb_tot*100): null
       }
     },
-    social: { foreign_born_pct: foreign, lang_other_pct: lang_other }
+    social: { foreign_born_pct: foreign, lang_other_pct: lang_other_pct, spanish_home_pct: spanish_pct}
   };
 }
 
@@ -395,7 +402,8 @@ function renderPanel() {
 
   renderKV(socialDiv, [
     ["Foreign-born", s.social.foreign_born_pct==null ? "—" : `${s.social.foreign_born_pct.toFixed(1)}%`],
-    ["Language other than English at home", s.social.lang_other_pct==null ? "—" : `${s.social.lang_other_pct.toFixed(1)}%`]
+    ["Language other than English at home (5+)", s.social.lang_other_pct==null ? "—" : `${s.social.lang_other_pct.toFixed(1)}%`],
+    ["Spanish spoken at home (5+)", s.social.spanish_home_pct==null ? "—" : `${s.social.spanish_home_pct.toFixed(1)}%`]
   ]);
 }
 
