@@ -93,10 +93,9 @@ const VARS = {
   // social (robust only)
   foreign:   { ds: "acs/acs5", codes: ["B05002_001E","B05002_013E"] },     // % foreign-born
   lang: { ds: "acs/acs5", codes: [
-    "B16001_001E", // total pop 5+ (denominator)
-    "B16001_002E", // speak only English
-    "B16001_003E", // Spanish: speak English "very well"
-    "B16001_004E"  // Spanish: speak English less than "very well"
+    "C16001_001E", // total 5+
+    "C16001_002E", // speak only English
+    "C16001_003E", // speaks Spanish
   ]},
 };
 
@@ -222,9 +221,9 @@ async function main() {
 
     const foreign_total = toNum(rec.B05002_013E);
     const foreign_base  = toNum(rec.B05002_001E);
-    const lang_base5 = toNum(rec.B16001_001E);
-    const eng_only   = toNum(rec.B16001_002E);
-    const spanish    = (toNum(rec.B16001_003E) || 0) + (toNum(rec.B16001_004E) || 0);
+    const lang_base5 = toNum(rec.C16001_001E);
+    const eng_only   = toNum(rec.C16001_002E);
+    const spanish    = toNum(rec.C16001_003E) || 0;
 
     stats[geoid] = {
       geoid, name: p.NAME, statefp: p.STATEFP, countyfp: p.COUNTYFP,
